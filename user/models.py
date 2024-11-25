@@ -56,10 +56,13 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    def __str__(self):
+        return self.email
+
 
 def profile_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
-    filename = f"{slugify(instance.name)}-{uuid.uuid4()}{extension}"
+    filename = f"{slugify(instance.id)}-{uuid.uuid4()}{extension}"
     return os.path.join("uploads/profile/", filename)
 
 
@@ -79,7 +82,7 @@ class Profile(models.Model):
     )  # Users following this profile
 
     def __str__(self):
-        return f"Profile of {self.user.email}"
+        return f"Profile of {self.user}"
 
     def followers_count(self):
         return self.followers.count()
