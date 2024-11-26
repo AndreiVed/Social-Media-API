@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth import get_user_model
 
 
 class UserManager(BaseUserManager):
@@ -84,11 +85,17 @@ class Profile(models.Model):
     def __str__(self):
         return f"Profile of {self.user}"
 
+    @property
     def followers_count(self):
         return self.followers.count()
 
+    @property
     def following_count(self):
         return self.user.following.count()  # Count users this user follows
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
 
 @receiver(post_save, sender=User)

@@ -6,6 +6,10 @@ from user.models import Profile
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    followers = serializers.IntegerField(read_only=True, source="followers_count")
+    following = serializers.IntegerField(read_only=True, source="following_count")
+
+    # follow_to = #TODO implement followers and follow_to
     class Meta:
         model = Profile
         fields = (
@@ -16,6 +20,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "city",
             "country",
             "avatar",
+            "followers",
+            "following",
         )
 
 
@@ -24,7 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ("id", "email", "password", "is_staff", "profile")
+        fields = ("id", "username", "email", "password", "is_staff", "profile")
         read_only_fields = ("is_staff",)
         extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
 
@@ -68,29 +74,6 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
-
-
-class ProfileRetrieveSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(source="user", read_only=True)
-
-    # followers = serializers.SlugRelatedField(
-    #     many=False, read_only=True, slug_field="user"
-    # )
-    # follow_to = #TODO implement followers and follow_to
-    class Meta:
-        model = Profile
-        fields = (
-            "email",
-            "first_name",
-            "last_name",
-            "bio",
-            "phone",
-            "city",
-            "country",
-            "avatar",
-            # "followers",
-            # "follower_to",
-        )
 
 
 class FollowSerializer(serializers.Serializer):

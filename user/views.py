@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
@@ -125,3 +126,61 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class FollowView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        """
+        Follow a user by adding the authenticated user to their followers.
+        """
+        profile_to_follow = get_object_or_404(Profile, id=pk)
+
+        if profile_to_follow.user == request.user:
+            return Response(
+                {"error": "You cannot follow yourself."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile_to_follow.followers.add(request.user)
+        return Response(
+            {"detail": "Successfully followed."}, status=status.HTTP_201_CREATED
+        )
+
+    def delete(self, request, pk):
+        """
+        Unfollow a user by removing the authenticated user from their followers.
+        """
+        profile_to_unfollow = get_object_or_404(Profile, id=pk)
+
+        if profile_to_unfollow.user == request.user:
+            return Response(
+                {"error": "You cannot unfollow yourself."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile_to_unfollow.followers.remove(request.user)
+        return Response(
+            {"detail": "Successfully unfollowed."}, status=status.HTTP_204_NO_CONTENT
+        )
+
+
+class FollowersListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        profile = get_object_or_404(Profile, id=pk)
+        followers = profile.followers.all()
+        data = [{"id": user.id, "full_name": user.full_name} for user in followers]
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class FollowingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        profile = get_object_or_404(Profile, id=pk)
+        following = profile.user.following.all()
+        data = [{"id": user.id, "full_name": user.full_name} for user in following]
+        return Response(data, status=status.HTTP_200_OK)
