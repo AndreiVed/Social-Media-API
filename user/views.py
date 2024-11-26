@@ -1,33 +1,30 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status, generics
+from rest_framework import viewsets, status, generics, mixins
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.token_blacklist.models import (
-    OutstandingToken,
-    BlacklistedToken,
-)
+from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from .models import User, Profile
-from .serializers import UserSerializer, FollowSerializer
+from .serializers import (
+    FollowSerializer,
+    UserListAndRetrieveSerializer,
+    ProfileSerializer,
+    UserCreateAndUpdateSerializer,
+    AuthTokenSerializer,
+)
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.settings import api_settings
 
-from user.serializers import UserSerializer, AuthTokenSerializer
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = UserListAndRetrieveSerializer
 
     def get_queryset(self):
         queryset = self.queryset
         email = self.request.query_params.get("email")
-        username = self.request.query_params.get("username")
         first_name = self.request.query_params.get("first_name")
         last_name = self.request.query_params.get("last_name")
         city = self.request.query_params.get("city")
@@ -35,8 +32,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if email:
             queryset = queryset.filter(email__icontains=email)
-        if username:
-            queryset = queryset.filter(username__icontains=username)
         if first_name:
             queryset = queryset.filter(profile__first_name__icontains=first_name)
         if last_name:
@@ -74,7 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
         List followers of the current user.
         """
         followers = request.user.profile.followers.all()
-        serializer = UserSerializer(followers, many=True)
+        serializer = UserListAndRetrieveSerializer(followers, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["GET"])
@@ -83,13 +78,35 @@ class UserViewSet(viewsets.ModelViewSet):
         List users the current user is following.
         """
         following = request.user.following.all()
-        serializer = UserSerializer(following, many=True)
+        serializer = UserListAndRetrieveSerializer(following, many=True)
         return Response(serializer.data)
 
 
 class CreateUserView(generics.CreateAPIView):
-    serializer_class = UserSerializer
+    serializer_class = UserCreateAndUpdateSerializer
     permission_classes = [AllowAny]
+
+
+class ManageUserView(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    GenericViewSet,
+):
+
+    def get_object(self):
+        return self.request.user
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return UserListAndRetrieveSerializer
+        return UserCreateAndUpdateSerializer
+
+
+class ManageProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+
+    def get_object(self):
+        return self.request.user.profile
 
 
 class CreateTokenView(ObtainAuthToken):
@@ -119,13 +136,6 @@ class LogoutView(APIView):
             return Response(
                 {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
             )
-
-
-class ManageUserView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
-
-    def get_object(self):
-        return self.request.user
 
 
 class FollowView(APIView):

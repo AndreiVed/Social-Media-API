@@ -9,7 +9,6 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.contrib.auth import get_user_model
 
 
 class UserManager(BaseUserManager):
