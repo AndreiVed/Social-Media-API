@@ -1,7 +1,13 @@
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.token_blacklist.models import (
+    OutstandingToken,
+    BlacklistedToken,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, Profile
@@ -82,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = [AllowAny]
 
 
 class CreateTokenView(ObtainAuthToken):
@@ -103,7 +109,12 @@ class LogoutView(APIView):
                 {"detail": "Successfully logged out"},
                 status=status.HTTP_205_RESET_CONTENT,
             )
-        except Exception as e:
+        except KeyError:
+            return Response(
+                {"error": "Refresh token is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception:
             return Response(
                 {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
             )
