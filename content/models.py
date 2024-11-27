@@ -1,10 +1,11 @@
 import os
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import CASCADE
 from django.utils.text import slugify
+
+from social_media_api import settings
 
 
 class Hashtag(models.Model):
@@ -21,11 +22,13 @@ def post_image_file_path(instance, filename):
 
 
 class Post(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=CASCADE, related_name="posts")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=CASCADE, related_name="posts"
+    )
     title = models.CharField(max_length=63, unique=True)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    hashtag = models.ForeignKey(Hashtag, on_delete=CASCADE)
+    hashtag = models.ManyToManyField(Hashtag, related_name="posts")
     image = models.ImageField(null=True, blank=True, upload_to=post_image_file_path)
 
     def __str__(self):
@@ -43,7 +46,7 @@ class Post(models.Model):
 class PostReaction(models.Model):
     REACTION_CHOICES = {"LIKE": "Like", "DISLIKE": "Dislike"}
     user = models.ForeignKey(
-        get_user_model(), on_delete=CASCADE, related_name="reactions"
+        settings.AUTH_USER_MODEL, on_delete=CASCADE, related_name="reactions"
     )
     post = models.ForeignKey(Post, on_delete=CASCADE, related_name="reactions")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -56,7 +59,7 @@ class PostReaction(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=CASCADE, related_name="comments")
     user = models.ForeignKey(
-        get_user_model(), on_delete=CASCADE, related_name="comments"
+        settings.AUTH_USER_MODEL, on_delete=CASCADE, related_name="comments"
     )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
