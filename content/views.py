@@ -9,6 +9,7 @@ from content.serializers import (
     PostSerializer,
     CommentSerializer,
     PostListSerializer,
+    PostRetrieveSerializer,
 )
 
 
@@ -55,8 +56,10 @@ class PostViewSet(
         return queryset
 
     def get_serializer_class(self):
-        if self.request.method == "GET":
+        if self.action == "list":
             return PostListSerializer
+        if self.action == "retrieve":
+            return PostRetrieveSerializer
         return PostSerializer
 
     def perform_create(self, serializer):

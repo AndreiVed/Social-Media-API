@@ -9,7 +9,7 @@ from social_media_api import settings
 
 
 class Hashtag(models.Model):
-    name = models.CharField(max_length=63, unique=True)
+    name = models.CharField(max_length=63)
 
     def __str__(self):
         return self.name
@@ -46,6 +46,10 @@ class Post(models.Model):
     @property
     def dislikes_count(self):
         return self.reactions.count("DISLIKE")
+
+    @property
+    def comments_count(self):
+        return self.comments.count()
 
 
 class PostReaction(models.Model):
