@@ -41,11 +41,11 @@ class Post(models.Model):
 
     @property
     def likes_count(self):
-        return self.reactions.count("LIKE")
+        return self.reactions.filter(reaction="LIKE").count()
 
     @property
     def dislikes_count(self):
-        return self.reactions.count("DISLIKE")
+        return self.reactions.filter(reaction="Dislike").count()
 
     @property
     def comments_count(self):
@@ -63,6 +63,10 @@ class PostReaction(models.Model):
 
     def __str__(self):
         return self.reaction
+
+    class Meta:
+        unique_together = ["user", "post"]
+        ordering = ["-created_at"]
 
 
 class Comment(models.Model):

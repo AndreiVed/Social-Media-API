@@ -1,7 +1,7 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
-from content.models import Hashtag, Post, Comment
+from content.models import Hashtag, Post, Comment, PostReaction
 
 
 class HashtagSerializer(serializers.ModelSerializer):
@@ -36,6 +36,8 @@ class PostListSerializer(serializers.ModelSerializer):
     )
     hashtag = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
     comments_count = serializers.IntegerField(read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    dislikes_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Post
@@ -48,6 +50,8 @@ class PostListSerializer(serializers.ModelSerializer):
             "hashtag",
             "image",
             "comments_count",
+            "likes_count",
+            "dislikes_count",
         )
 
 
@@ -62,8 +66,30 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ("id", "user", "created_at", "content")
 
 
+class ReactionSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    user = serializers.SlugRelatedField(
+        many=False, read_only=True, slug_field="profile__full_name"
+    )
+    post = serializers.SlugRelatedField(many=False, read_only=True, slug_field="title")
+
+    class Meta:
+        model = PostReaction
+        fields = ["id", "post", "user", "reaction", "created_at"]
+
+    def validate(self, attrs):
+        user = self.context["user"]
+        post = self.context["post"]
+        if PostReaction.objects.filter(post=post, user=user).exists():
+            raise serializers.ValidationError(
+                {"reaction": "You have already reacted to this post."}
+            )
+        return attrs
+
+
 class PostRetrieveSerializer(PostListSerializer):
     comments = CommentSerializer(read_only=True, many=True)
+    reactions = ReactionSerializer(read_only=True, many=True)
 
     class Meta:
         model = Post
@@ -75,5 +101,6 @@ class PostRetrieveSerializer(PostListSerializer):
             "created_at",
             "hashtag",
             "image",
+            "reactions",
             "comments",
         )

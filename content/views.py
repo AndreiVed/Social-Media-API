@@ -12,6 +12,7 @@ from content.serializers import (
     CommentSerializer,
     PostListSerializer,
     PostRetrieveSerializer,
+    ReactionSerializer,
 )
 
 
@@ -64,6 +65,8 @@ class PostViewSet(
             return PostRetrieveSerializer
         if self.action == "create_comment":
             return CommentSerializer
+        if self.action == "add_reaction":
+            return ReactionSerializer
         return PostSerializer
 
     def perform_create(self, serializer):
@@ -73,6 +76,18 @@ class PostViewSet(
     def create_comment(self, request, pk=None):
         post = self.get_object()
         serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, post=post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="add-reaction")
+    def add_reaction(self, request, pk=None):
+        post = self.get_object()
+        serializer = ReactionSerializer(
+            data=request.data,
+            context={"user": request.user, "post": post},
+        )
         if serializer.is_valid():
             serializer.save(user=request.user, post=post)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
