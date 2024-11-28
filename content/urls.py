@@ -23,8 +23,9 @@ app_name = "content"
 
 router = routers.DefaultRouter()
 router.register("hashtags", HashtagViewSet)
-router.register("", PostViewSet)
 router.register("comments", CommentViewSet)
+router.register("", PostViewSet)
+
 
 urlpatterns = [
     path("", include(router.urls)),

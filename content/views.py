@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from rest_framework import mixins
+from rest_framework import mixins, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from content.models import Hashtag, Post, Comment
@@ -60,14 +62,24 @@ class PostViewSet(
             return PostListSerializer
         if self.action == "retrieve":
             return PostRetrieveSerializer
+        if self.action == "create_comment":
+            return CommentSerializer
         return PostSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @action(detail=True, methods=["post"], url_path="add-comment")
+    def create_comment(self, request, pk=None):
+        post = self.get_object()
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, post=post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CommentViewSet(
-    mixins.CreateModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,

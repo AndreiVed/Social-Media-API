@@ -52,14 +52,14 @@ class PostListSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     user = serializers.SlugRelatedField(
         many=False, read_only=True, slug_field="profile__full_name"
     )
 
     class Meta:
         model = Comment
-        fields = ("user", "created_at", "content")
+        fields = ("id", "user", "created_at", "content")
 
 
 class PostRetrieveSerializer(PostListSerializer):
