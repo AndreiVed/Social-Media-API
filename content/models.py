@@ -28,8 +28,13 @@ class Post(models.Model):
     title = models.CharField(max_length=63, unique=True)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    hashtag = models.ManyToManyField(Hashtag, related_name="posts")
+    hashtag = models.ManyToManyField(
+        Hashtag, related_name="posts", null=True, blank=True
+    )
     image = models.ImageField(null=True, blank=True, upload_to=post_image_file_path)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title} - {self.user}"

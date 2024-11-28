@@ -12,7 +12,6 @@ class HashtagSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    # user = serializers.SlugRelatedField(many=False, read_only=True, slug_field="user")
 
     class Meta:
         model = Post
@@ -28,7 +27,7 @@ class PostListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ("user", "title", "content", "created_at", "hashtag", "image")
+        fields = ("id", "user", "title", "content", "created_at", "hashtag", "image")
 
 
 class CommentSerializer(serializers.ModelSerializer):
