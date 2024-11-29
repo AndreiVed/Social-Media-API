@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from content.models import Hashtag, Post, Comment
+from content.models import Hashtag, Post, Comment, PostReaction
 from content.serializers import (
     HashtagSerializer,
     PostSerializer,
@@ -65,7 +65,7 @@ class PostViewSet(
             return PostRetrieveSerializer
         if self.action == "create_comment":
             return CommentSerializer
-        if self.action == "add_reaction":
+        if self.action in ("like_post", "dislike_post"):
             return ReactionSerializer
         return PostSerializer
 
@@ -81,17 +81,44 @@ class PostViewSet(
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["post"], url_path="add-reaction")
-    def add_reaction(self, request, pk=None):
+    def _handle_reaction(self, post, reaction_type):
+        try:
+            reaction = PostReaction.objects.get(
+                user=self.request.user,
+                post=post,
+            )
+            if reaction.reaction == reaction_type:
+                reaction.delete()
+                return Response(
+                    {f"{reaction_type.lower()}": f"{reaction_type} removed."},
+                    status=status.HTTP_200_OK,
+                )
+
+            reaction.reaction = reaction_type
+            reaction.save()
+
+            return Response(
+                {f"{reaction_type.lower()}": f"Changed to {reaction_type}."},
+                status=status.HTTP_200_OK,
+            )
+        except PostReaction.DoesNotExist:
+            PostReaction.objects.create(
+                user=self.request.user, post=post, reaction=reaction_type
+            )
+            return Response(
+                {f"{reaction_type.lower()}": f"{reaction_type} added."},
+                status=status.HTTP_201_CREATED,
+            )
+
+    @action(detail=True, methods=["post"], url_path="like")
+    def like_post(self, request, pk=None):
         post = self.get_object()
-        serializer = ReactionSerializer(
-            data=request.data,
-            context={"user": request.user, "post": post},
-        )
-        if serializer.is_valid():
-            serializer.save(user=request.user, post=post)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self._handle_reaction(post, "LIKE")
+
+    @action(detail=True, methods=["post"], url_path="dislike")
+    def dislike_post(self, request, pk=None):
+        post = self.get_object()
+        return self._handle_reaction(post, "DISLIKE")
 
 
 class CommentViewSet(

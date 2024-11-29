@@ -1,3 +1,6 @@
+from http.client import responses
+
+from django.template.context_processors import request
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -76,8 +79,13 @@ class ReactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostReaction
         fields = ["id", "post", "user", "reaction", "created_at"]
+        read_only_fields = ["id", "post", "user", "reaction", "created_at"]
 
     def validate(self, attrs):
+        req = self.context.get("request")
+        if req and req.method != "POST":
+            return attrs
+
         user = self.context["user"]
         post = self.context["post"]
         if PostReaction.objects.filter(post=post, user=user).exists():
