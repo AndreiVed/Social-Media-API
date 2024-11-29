@@ -120,6 +120,14 @@ class PostViewSet(
         post = self.get_object()
         return self._handle_reaction(post, "DISLIKE")
 
+    @action(detail=False, methods=["get"], url_path="liked-posts")
+    def liked_posts(self, request):
+        liked_posts = Post.objects.filter(
+            reactions__user=self.request.user, reactions__reaction="LIKE"
+        ).distinct()
+        serializer = PostListSerializer(liked_posts, many=True)
+        return Response(serializer.data)
+
 
 class CommentViewSet(
     mixins.ListModelMixin,
