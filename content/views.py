@@ -2,10 +2,12 @@ from datetime import datetime
 
 from rest_framework import mixins, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from content.models import Hashtag, Post, Comment, PostReaction
+from content.permissions import IsOwnerOrReadOnly
 from content.serializers import (
     HashtagSerializer,
     PostSerializer,
@@ -27,14 +29,9 @@ class HashtagViewSet(
     serializer_class = HashtagSerializer
 
 
-class PostViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    GenericViewSet,
-):
+class PostViewSet(ModelViewSet):
     queryset = Post.objects.all()
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
         queryset = Post.objects.filter(user=self.request.user)
@@ -133,6 +130,7 @@ class CommentViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     GenericViewSet,
 ):
     queryset = Comment.objects.all()

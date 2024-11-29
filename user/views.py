@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from content.permissions import IsOwnerOrReadOnly
 from .models import User, Profile
 from .serializers import (
     FollowSerializer,
@@ -104,6 +106,7 @@ class ManageUserView(
 
 class ManageProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_object(self):
         return self.request.user.profile
@@ -111,12 +114,10 @@ class ManageProfileView(generics.RetrieveUpdateAPIView):
 
 class CreateTokenView(ObtainAuthToken):
     renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-    permission_classes = (IsAuthenticated,)
     serializer_class = AuthTokenSerializer
 
 
 class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         try:
@@ -139,7 +140,6 @@ class LogoutView(APIView):
 
 
 class FollowView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
         """
@@ -177,20 +177,22 @@ class FollowView(APIView):
 
 
 class FollowersListView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         profile = get_object_or_404(Profile, id=pk)
         followers = profile.followers.all()
-        data = [{"id": user.id, "full_name": user.full_name} for user in followers]
+        data = [
+            {"id": user.id, "full_name": user.profile.full_name} for user in followers
+        ]
         return Response(data, status=status.HTTP_200_OK)
 
 
 class FollowingListView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         profile = get_object_or_404(Profile, id=pk)
         following = profile.user.following.all()
-        data = [{"id": user.id, "full_name": user.full_name} for user in following]
+        data = [
+            {"id": user.id, "full_name": user.profile.full_name} for user in following
+        ]
         return Response(data, status=status.HTTP_200_OK)
