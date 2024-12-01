@@ -22,7 +22,6 @@ from user.views import (
 app_name = "content"
 
 router = routers.DefaultRouter()
-router.register("hashtags", HashtagViewSet)
 router.register("comments", CommentViewSet)
 router.register("", PostViewSet)
 

@@ -112,3 +112,11 @@ class PostRetrieveSerializer(PostListSerializer):
             "reactions",
             "comments",
         )
+
+
+class CommentListSerializer(CommentSerializer):
+    post = PostListSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ("id", "post", "user", "created_at", "content")

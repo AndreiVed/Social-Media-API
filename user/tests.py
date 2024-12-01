@@ -19,7 +19,7 @@ class LogoutViewTestCase(APITestCase):
         self.refresh_token = str(refresh)
 
         # Set URL for logout
-        self.logout_url = "/api/user/logout/"
+        self.logout_url = "/api/users/logout/"
 
     def test_successful_logout(self):
         """
